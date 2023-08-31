@@ -18,24 +18,30 @@ class TableExtractor:
         self.image_path = image_path
         self.rectangular_contours = []
 
+    # Read image
     def read_image(self):
         self.image = Image.open(self.image_path)
 
+    # Store processed image
     def store_process_image(self, output_path, image):
         image.save(output_path)
 
+    # Convert image to grayscale
     def convert_image_to_grayscale(self):
         self.grayscale_image = ImageOps.grayscale(self.image)
 
+    # Threshold image
     def threshold_image(self):
         threshold_value = 150  # Adjust the threshold value as needed
         self.thresholded_image = self.grayscale_image.point(
             lambda p: 255 if p > threshold_value else 0)
 
+    # Invert image
     def invert_image(self):
         self.inverted_image = ImageOps.invert(self.thresholded_image)
 
     # Extracting vertical lines
+    # erosion vertical lines
     def v_erosion_image(self, iterations=1):
         # Convert PIL Image to NumPy array
         image_array = np.array(self.inverted_image)
@@ -49,6 +55,7 @@ class TableExtractor:
         # Convert the eroded image array back to PIL Image
         self.v_eroded_image = Image.fromarray(eroded_image_array)
 
+    # dilation vertical lines
     def v_dilation_image(self, iterations=5):
         image_array = np.array(self.v_eroded_image)
         vertical_kernel = rectangle(5, 1)
@@ -59,6 +66,7 @@ class TableExtractor:
         self.v_dilated_image = Image.fromarray(dilated_image_array)
 
     # extracting horizontal lines
+    # erosion horizontal lines
     def h_erosion_image(self, iterations=5):
         image_array = np.array(self.inverted_image)
         horizontal_kernel = rectangle(1, 5)
@@ -68,6 +76,7 @@ class TableExtractor:
                 eroded_image_array, horizontal_kernel)
         self.h_eroded_image = Image.fromarray(eroded_image_array)
 
+    # dilation horizontal lines
     def h_dilation_image(self, iterations=5):
         image_array = np.array(self.h_eroded_image)
         horizontal_kernel = rectangle(1, 5)
@@ -77,6 +86,7 @@ class TableExtractor:
                 dilated_image_array, horizontal_kernel)
         self.h_dilated_image = Image.fromarray(dilated_image_array)
 
+    # Blending vertical and horizontal lines
     def blend_images(self, weight1, weight2, gamma=0.0):
         v_dilated_image_array = np.array(self.v_dilated_image)
         h_dilated_image_array = np.array(self.h_dilated_image)
@@ -106,11 +116,13 @@ class TableExtractor:
         self.dilated_image = self.inverted_image.filter(kernel)
     '''
 
+    # Threshold blended image
     def threshold_blended_image(self):
         threshold_value = 120  # Adjust the threshold value as needed
         self.thresh_blended_image = self.blended_image.point(
             lambda p: 255 if p > threshold_value else 0)
 
+    # Find contours
     def find_contours(self, threshold_value=128):
         image_array = np.array(self.thresh_blended_image)
         binary_image = image_array > threshold_value
