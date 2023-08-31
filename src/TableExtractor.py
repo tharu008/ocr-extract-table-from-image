@@ -77,14 +77,60 @@ class TableExtractor:
                 dilated_image_array, horizontal_kernel)
         self.h_dilated_image = Image.fromarray(dilated_image_array)
 
+    def blend_images(self, weight1, weight2, gamma=0.0):
+        v_dilated_image_array = np.array(self.v_dilated_image)
+        h_dilated_image_array = np.array(self.h_dilated_image)
+
+        blended_array = (weight1 * v_dilated_image_array +
+                         weight2 * h_dilated_image_array + gamma).astype(np.uint8)
+
+        # Normalize the blended array to [0, 255]
+        blended_array = ((blended_array - blended_array.min()) /
+                         (blended_array.max() - blended_array.min()) * 255).astype(np.uint8)
+
+        self.blended_image = Image.fromarray(blended_array)
+
     '''
+    def erosion_blended_image(self, iterations=1):
+        image_array = np.array(self.blended_image)
+        kernel = rectangle(2, 2)
+        eroded_image_array = image_array.copy()  # Make a copy to preserve original
+        for _ in range(iterations):
+            eroded_image_array = binary_erosion(
+                eroded_image_array, kernel)
+        self.eroded_blended_image = Image.fromarray(eroded_image_array)
+
+    
     def dilate_image(self):
         kernel = ImageFilter.Kernel((3, 3), [1, 1, 1, 1, 1, 1, 1, 1, 1])
         self.dilated_image = self.inverted_image.filter(kernel)
     '''
 
+    def threshold_blended_image(self):
+        threshold_value = 120  # Adjust the threshold value as needed
+        self.thresh_blended_image = self.blended_image.point(
+            lambda p: 255 if p > threshold_value else 0)
+
+    def find_contours(self, threshold_value=128):
+        image_array = np.array(self.thresh_blended_image)
+        binary_image = image_array > threshold_value
+        contours = measure.find_contours(binary_image, 0.5)
+
+        # Create an empty PIL image for visualization
+        contour_image = self.image.copy()
+        draw = ImageDraw.Draw(contour_image)
+
+        # Draw the contours on the image
+        for contour in contours:
+            contour = np.round(contour).astype(int)
+            draw.line(
+                list(zip(contour[:, 1], contour[:, 0])), fill='green', width=2)
+
+        self.contour_img = contour_image
+
+    '''
     def find_contours(self):
-        labeled_image = measure.label(np.array(self.h_dilated_image))
+        labeled_image = measure.label(np.array(self.thresh_blended_image))
         regions = measure.regionprops(labeled_image)
         self.contours = [region.bbox for region in regions]
         self.image_with_all_contours = self.image.copy()
@@ -96,6 +142,8 @@ class TableExtractor:
             min_row, min_col, max_row, max_col = contour
             draw.rectangle([min_col, min_row, max_col, max_row],
                            outline=(0, 255, 0), width=3)
+
+    '''
 
     def execute(self):
         self.read_image()
@@ -121,9 +169,19 @@ class TableExtractor:
             "./uploads/6_horizontal_eroded.jpg", self.h_eroded_image)
         self.h_dilation_image(iterations=5)
         self.store_process_image(
-            "./uploads/7_horizontal_dilated.jpg", self.h_dilated_image)        # self.dilate_image()
+            "./uploads/7_horizontal_dilated.jpg", self.h_dilated_image)
+        self.blend_images(1, 1)
+        self.store_process_image(
+            "./uploads/8_blended.jpg", self.blended_image)
+        # self.erosion_blended_image(iterations=1)
+        # self.store_process_image(
+        #    "./uploads/9_eroded_blended.jpg", self.eroded_blended_image)
+        self.threshold_blended_image()
+        self.store_process_image(
+            "./uploads/10_thresholded_blended.jpg", self.thresh_blended_image)
+
         # self.store_process_image(
     #     "./uploads/_dialateded.jpg", self.dilated_image)
-        self.find_contours()
+        self.find_contours(threshold_value=128)
         self.store_process_image(
-            "./uploads/8_all_contours.jpg", self.image_with_all_contours)
+            "./uploads/11_all_contours.jpg", self.contour_img)
