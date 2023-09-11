@@ -1,15 +1,11 @@
 from PIL import Image, ImageOps, ImageFilter, ImageDraw
 from skimage import measure
+from skimage.measure import find_contours
+from skimage.measure import regionprops, label
 from skimage.morphology import rectangle, binary_erosion, binary_dilation
 import numpy as np
 import matplotlib.pyplot as plt
-import shapely.geometry
-from shapely.geometry import Polygon
-from shapely.ops import unary_union
-
-
-# def perimeter(polygon):
-#    return sum(polygon.length for polygon in polygon.geoms)
+import cv2
 
 
 class TableExtractor:
@@ -18,29 +14,29 @@ class TableExtractor:
         self.image_path = image_path
         self.rectangular_contours = []
 
-    # Read image
+    # Read image - PIL Image
     def read_image(self):
         self.image = Image.open(self.image_path)
 
-    # Store processed image
+    # Store processed image - PIL Image
     def store_process_image(self, output_path, image):
         image.save(output_path)
 
-    # Convert image to grayscale
+    # Convert image to grayscale - PIL Image
     def convert_image_to_grayscale(self):
         self.grayscale_image = ImageOps.grayscale(self.image)
 
-    # Threshold image
+    # Threshold image - PIL Image
     def threshold_image(self):
         threshold_value = 150  # Adjust the threshold value as needed
         self.thresholded_image = self.grayscale_image.point(
             lambda p: 255 if p > threshold_value else 0)
 
-    # Invert image
+    # Invert image - PIL Image
     def invert_image(self):
         self.inverted_image = ImageOps.invert(self.thresholded_image)
 
-    # Extracting vertical lines
+    # Extracting vertical lines - skimage
     # erosion vertical lines
     def v_erosion_image(self, iterations=1):
         # Convert PIL Image to NumPy array
@@ -55,7 +51,7 @@ class TableExtractor:
         # Convert the eroded image array back to PIL Image
         self.v_eroded_image = Image.fromarray(eroded_image_array)
 
-    # dilation vertical lines
+    # dilation vertical lines - skimage
     def v_dilation_image(self, iterations=5):
         image_array = np.array(self.v_eroded_image)
         vertical_kernel = rectangle(5, 1)
@@ -66,7 +62,7 @@ class TableExtractor:
         self.v_dilated_image = Image.fromarray(dilated_image_array)
 
     # extracting horizontal lines
-    # erosion horizontal lines
+    # erosion horizontal lines - skimage
     def h_erosion_image(self, iterations=5):
         image_array = np.array(self.inverted_image)
         horizontal_kernel = rectangle(1, 5)
@@ -76,7 +72,7 @@ class TableExtractor:
                 eroded_image_array, horizontal_kernel)
         self.h_eroded_image = Image.fromarray(eroded_image_array)
 
-    # dilation horizontal lines
+    # dilation horizontal lines - skimage
     def h_dilation_image(self, iterations=5):
         image_array = np.array(self.h_eroded_image)
         horizontal_kernel = rectangle(1, 5)
@@ -90,72 +86,150 @@ class TableExtractor:
     def blend_images(self, weight1, weight2, gamma=0.0):
         v_dilated_image_array = np.array(self.v_dilated_image)
         h_dilated_image_array = np.array(self.h_dilated_image)
-
+        # numpy array used for blending (calculate on image data)
         blended_array = (weight1 * v_dilated_image_array +
                          weight2 * h_dilated_image_array + gamma).astype(np.uint8)
 
         # Normalize the blended array to [0, 255]
         blended_array = ((blended_array - blended_array.min()) /
                          (blended_array.max() - blended_array.min()) * 255).astype(np.uint8)
-
+        # PIL image used for visualization(convert np to PIL)
         self.blended_image = Image.fromarray(blended_array)
 
-    '''
-    def erosion_blended_image(self, iterations=1):
-        image_array = np.array(self.blended_image)
-        kernel = rectangle(2, 2)
-        eroded_image_array = image_array.copy()  # Make a copy to preserve original
-        for _ in range(iterations):
-            eroded_image_array = binary_erosion(
-                eroded_image_array, kernel)
-        self.eroded_blended_image = Image.fromarray(eroded_image_array)
-
-    
-    def dilate_image(self):
-        kernel = ImageFilter.Kernel((3, 3), [1, 1, 1, 1, 1, 1, 1, 1, 1])
-        self.dilated_image = self.inverted_image.filter(kernel)
-    '''
-
-    # Threshold blended image
+    # Threshold blended image - PIL Image
     def threshold_blended_image(self):
         threshold_value = 120  # Adjust the threshold value as needed
         self.thresh_blended_image = self.blended_image.point(
             lambda p: 255 if p > threshold_value else 0)
 
-    # Find contours
-    def find_contours(self, threshold_value=128):
-        image_array = np.array(self.thresh_blended_image)
-        binary_image = image_array > threshold_value
-        contours = measure.find_contours(binary_image, 0.5)
+    # cv2 - optional
+    '''
+    def img_sample(self):
+        rho = 1
+        theta = np.pi/80
+        threshold = 200
+        minLinLength = 300
+        maxLineGap = 20
+        binary_image = np.array(self.thresh_blended_image)
+        linesP = cv2.HoughLinesP(
+            binary_image, rho, theta, threshold, None, minLinLength, maxLineGap)
 
-        # Create an empty PIL image for visualization
-        contour_image = self.image.copy()
-        draw = ImageDraw.Draw(contour_image)
+        imgS = self.image.copy()
+        cImage = np.array(imgS)
 
-        # Draw the contours on the image
-        for contour in contours:
-            contour = np.round(contour).astype(int)
-            draw.line(
-                list(zip(contour[:, 1], contour[:, 0])), fill='green', width=2)
+        def is_vertical(line):
+            return line[0] == line[2]
 
-        self.contour_img = contour_image
+        def is_horizontal(line):
+            return line[1] == line[3]
+        horizontal_lines = []
+        vertical_lines = []
+
+        if linesP is not None:
+            for i in range(0, len(linesP)):
+                l = linesP[i][0]
+                if (is_vertical(l)):
+                    vertical_lines.append(l)
+
+                elif (is_horizontal(l)):
+                    horizontal_lines.append(l)
+        for i, line in enumerate(horizontal_lines):
+            cv2.line(cImage, (line[0], line[1]), (line[2],
+                     line[3]), (0, 255, 0), 3, cv2.LINE_AA)
+
+        for i, line in enumerate(vertical_lines):
+            cv2.line(cImage, (line[0], line[1]), (line[2],
+                     line[3]), (0, 0, 255), 3, cv2.LINE_AA)
+
+        width = 800  # Specify the desired width
+        height = 600  # Specify the desired height
+        resized_image = cv2.resize(cImage, (width, height))
+
+        # Display the resized image with the specified aspect ratio
+        cv2.imshow("with_line", resized_image)
+
+        cv2.waitKey(0)
+        cv2.destroyWindow("with_line")  # close the window
 
     '''
+
+    # Find contours - cv2
     def find_contours(self):
-        labeled_image = measure.label(np.array(self.thresh_blended_image))
-        regions = measure.regionprops(labeled_image)
-        self.contours = [region.bbox for region in regions]
+        img = np.array(self.thresh_blended_image)
+        self.contours, self.hierarchy = cv2.findContours(
+            img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         self.image_with_all_contours = self.image.copy()
-        self.draw_contours()
+        image_array = np.array(self.image_with_all_contours)
 
-    def draw_contours(self):
-        draw = ImageDraw.Draw(self.image_with_all_contours)
+        cv2.drawContours(image_array,
+                         self.contours, -1, (0, 255, 0), 3)
+        self.image_with_all_contours = Image.fromarray(image_array)
+
+    def filter_contours_and_leave_only_rectangles(self):
+        self.rectangular_contours = []
         for contour in self.contours:
-            min_row, min_col, max_row, max_col = contour
-            draw.rectangle([min_col, min_row, max_col, max_row],
-                           outline=(0, 255, 0), width=3)
+            peri = cv2.arcLength(contour, True)
+            approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
+            if len(approx) == 4:
+                self.rectangular_contours.append(approx)
+        self.image_with_only_rectangular_contours = self.image.copy()
+        image_array = np.array(self.image_with_only_rectangular_contours)
 
-    '''
+        cv2.drawContours(image_array,
+                         self.rectangular_contours, -1, (0, 255, 0), 3)
+        self.image_with_only_rectangular_contours = Image.fromarray(
+            image_array)
+
+    def find_largest_contour_by_area(self):
+        max_area = 0
+        self.contour_with_max_area = None
+        for contour in self.rectangular_contours:
+            area = cv2.contourArea(contour)
+            if area > max_area:
+                max_area = area
+                self.contour_with_max_area = contour
+        self.image_with_contour_with_max_area = self.image.copy()
+        image_array = np.array(self.image_with_only_rectangular_contours)
+
+        cv2.drawContours(image_array, [
+                         self.contour_with_max_area], -1, (0, 255, 0), 3)
+        self.image_with_contour_with_max_area = Image.fromarray(image_array)
+
+    def order_points_in_the_contour_with_max_area(self):
+        self.contour_with_max_area_ordered = self.order_points(
+            self.contour_with_max_area)
+        self.image_with_points_plotted = self.image.copy()
+        for point in self.contour_with_max_area_ordered:
+            point_coordinates = (int(point[0]), int(point[1]))
+            image_array = np.array(self.image_with_points_plotted)
+
+            self.image_with_points_plotted = cv2.circle(
+                image_array, point_coordinates, 10, (0, 0, 255), -1)
+            self.image_with_points_plotted = Image.fromarray(image_array)
+
+    def order_points(self, pts):
+        # initialzie a list of coordinates that will be ordered
+        # such that the first entry in the list is the top-left,
+        # the second entry is the top-right, the third is the
+        # bottom-right, and the fourth is the bottom-left
+        pts = pts.reshape(4, 2)
+        rect = np.zeros((4, 2), dtype="float32")
+
+        # the top-left point will have the smallest sum, whereas
+        # the bottom-right point will have the largest sum
+        s = pts.sum(axis=1)
+        rect[0] = pts[np.argmin(s)]
+        rect[2] = pts[np.argmax(s)]
+
+        # now, compute the difference between the points, the
+        # top-right point will have the smallest difference,
+        # whereas the bottom-left will have the largest difference
+        diff = np.diff(pts, axis=1)
+        rect[1] = pts[np.argmin(diff)]
+        rect[3] = pts[np.argmax(diff)]
+
+        # return the ordered coordinates
+        return rect
 
     def execute(self):
         self.read_image()
@@ -190,10 +264,16 @@ class TableExtractor:
         #    "./uploads/9_eroded_blended.jpg", self.eroded_blended_image)
         self.threshold_blended_image()
         self.store_process_image(
-            "./uploads/10_thresholded_blended.jpg", self.thresh_blended_image)
-
-        # self.store_process_image(
-    #     "./uploads/_dialateded.jpg", self.dilated_image)
-        self.find_contours(threshold_value=128)
+            "./uploads/9_thresholded_blended.jpg", self.thresh_blended_image)
+        self.find_contours()
         self.store_process_image(
-            "./uploads/11_all_contours.jpg", self.contour_img)
+            "./uploads/10_all_contours.jpg", self.image_with_all_contours)
+        self.filter_contours_and_leave_only_rectangles()
+        self.store_process_image(
+            "./uploads/11_only_rectangular_contours.jpg", self.image_with_only_rectangular_contours)
+        self.find_largest_contour_by_area()
+        self.store_process_image(
+            "./uploads/12_contour_with_max_area.jpg", self.image_with_contour_with_max_area)
+        self.order_points_in_the_contour_with_max_area()
+        self.store_process_image(
+            "./uploads/13_with_4_corner_points_plotted.jpg", self.image_with_points_plotted)
