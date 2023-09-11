@@ -273,51 +273,51 @@ class TableExtractor:
     def execute(self):
         self.read_image()
         self.store_process_image(
-            "./uploads/0_original.jpg", self.image)
+            "./uploads/TableExtractor/0_original.jpg", self.image)
         self.convert_image_to_grayscale()
         self.store_process_image(
-            "./uploads/1_grayscaled.jpg", self.grayscale_image)
+            "./uploads/TableExtractor/1_grayscaled.jpg", self.grayscale_image)
         self.threshold_image()
         self.store_process_image(
-            "./uploads/2_thresholded.jpg", self.thresholded_image)
+            "./uploads/TableExtractor/2_thresholded.jpg", self.thresholded_image)
         self.invert_image()
         self.store_process_image(
-            "./uploads/3_inverteded.jpg", self.inverted_image)
+            "./uploads/TableExtractor/3_inverteded.jpg", self.inverted_image)
         self.v_erosion_image(iterations=5)
         self.store_process_image(
-            "./uploads/4_vertical_eroded.jpg", self.v_eroded_image)
+            "./uploads/TableExtractor/4_vertical_eroded.jpg", self.v_eroded_image)
         self.v_dilation_image(iterations=5)
         self.store_process_image(
-            "./uploads/5_vertical_dilated.jpg", self.v_dilated_image)
+            "./uploads/TableExtractor/5_vertical_dilated.jpg", self.v_dilated_image)
         self.h_erosion_image(iterations=5)
         self.store_process_image(
-            "./uploads/6_horizontal_eroded.jpg", self.h_eroded_image)
+            "./uploads/TableExtractor/6_horizontal_eroded.jpg", self.h_eroded_image)
         self.h_dilation_image(iterations=5)
         self.store_process_image(
-            "./uploads/7_horizontal_dilated.jpg", self.h_dilated_image)
+            "./uploads/TableExtractor/7_horizontal_dilated.jpg", self.h_dilated_image)
         self.blend_images(1, 1)
         self.store_process_image(
-            "./uploads/8_blended.jpg", self.blended_image)
+            "./uploads/TableExtractor/8_blended.jpg", self.blended_image)
         self.threshold_blended_image()
         self.store_process_image(
-            "./uploads/9_thresholded_blended.jpg", self.thresh_blended_image)
+            "./uploads/TableExtractor/9_thresholded_blended.jpg", self.thresh_blended_image)
         self.find_contours()
         self.store_process_image(
-            "./uploads/10_all_contours.jpg", self.image_with_all_contours)
+            "./uploads/TableExtractor/10_all_contours.jpg", self.image_with_all_contours)
         self.filter_contours_and_leave_only_rectangles()
         self.store_process_image(
-            "./uploads/11_only_rectangular_contours.jpg", self.image_with_only_rectangular_contours)
+            "./uploads/TableExtractor/11_only_rectangular_contours.jpg", self.image_with_only_rectangular_contours)
         self.find_largest_contour_by_area()
         self.store_process_image(
-            "./uploads/12_contour_with_max_area.jpg", self.image_with_contour_with_max_area)
+            "./uploads/TableExtractor/12_contour_with_max_area.jpg", self.image_with_contour_with_max_area)
         self.order_points_in_the_contour_with_max_area()
         self.store_process_image(
-            "./uploads/13_with_4_corner_points_plotted.jpg", self.image_with_points_plotted)
+            "./uploads/TableExtractor/13_with_4_corner_points_plotted.jpg", self.image_with_points_plotted)
         self.calculate_new_width_and_height_of_image()
         self.apply_perspective_transform()
         self.store_process_image(
-            "./uploads/14_perspective_corrected.jpg", self.perspective_corrected_image)
+            "./uploads/TableExtractor/14_perspective_corrected.jpg", self.perspective_corrected_image)
         self.add_10_percent_padding()
-        self.store_process_image("./uploads/15_perspective_corrected_with_padding.jpg",
+        self.store_process_image("./uploads/TableExtractor/15_perspective_corrected_with_padding.jpg",
                                  self.perspective_corrected_image_with_padding)
         return self.perspective_corrected_image_with_padding
