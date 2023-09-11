@@ -207,6 +207,37 @@ class TableExtractor:
                 image_array, point_coordinates, 10, (0, 0, 255), -1)
             self.image_with_points_plotted = Image.fromarray(image_array)
 
+    def calculate_new_width_and_height_of_image(self):
+        existing_image_width, existing_image_height = self.image.size
+        existing_image_width_reduced_by_10_percent = int(
+            existing_image_width * 0.9)
+
+        distance_between_top_left_and_top_right = self.calculateDistanceBetween2Points(
+            self.contour_with_max_area_ordered[0], self.contour_with_max_area_ordered[1])
+        distance_between_top_left_and_bottom_left = self.calculateDistanceBetween2Points(
+            self.contour_with_max_area_ordered[0], self.contour_with_max_area_ordered[3])
+
+        aspect_ratio = distance_between_top_left_and_bottom_left / \
+            distance_between_top_left_and_top_right
+
+        self.new_image_width = existing_image_width_reduced_by_10_percent
+        self.new_image_height = int(self.new_image_width * aspect_ratio)
+
+    def calculateDistanceBetween2Points(self, p1, p2):
+        dis = ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2) ** 0.5
+        return dis
+
+    def apply_perspective_transform(self):
+        pts1 = np.float32(self.contour_with_max_area_ordered)
+        pts2 = np.float32([[0, 0], [self.new_image_width, 0], [
+                          self.new_image_width, self.new_image_height], [0, self.new_image_height]])
+        # Convert the PIL image to a NumPy array
+        src_image = np.array(self.image)
+        matrix = cv2.getPerspectiveTransform(pts1, pts2)
+        img_array = cv2.warpPerspective(
+            src_image, matrix, (self.new_image_width, self.new_image_height))
+        self.perspective_corrected_image = Image.fromarray(img_array)
+
     def order_points(self, pts):
         # initialzie a list of coordinates that will be ordered
         # such that the first entry in the list is the top-left,
@@ -277,3 +308,7 @@ class TableExtractor:
         self.order_points_in_the_contour_with_max_area()
         self.store_process_image(
             "./uploads/13_with_4_corner_points_plotted.jpg", self.image_with_points_plotted)
+        self.calculate_new_width_and_height_of_image()
+        self.apply_perspective_transform()
+        self.store_process_image(
+            "./uploads/14_perspective_corrected.jpg", self.perspective_corrected_image)
