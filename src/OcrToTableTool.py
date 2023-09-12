@@ -19,17 +19,24 @@ class OcrToTableTool:
     def convert_image_to_grayscale(self):
         return cv2.cvtColor(self.image, self.dilated_image)
 
+    def remove_noise_with_erode(self):
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
+        img_array = np.array(self.thresholded_image)
+        self.erode_img = cv2.erode(
+            img_array, kernel, iterations=1)
+        self.erode_img = Image.fromarray(self.erode_img)
+
     def dilate_image(self):
         kernel_to_remove_gaps_between_words = np.array([
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1]
         ])
-        img_array = np.array(self.thresholded_image)
+        img_array = np.array(self.erode_img)
         self.dilated_image = cv2.dilate(
-            img_array, kernel_to_remove_gaps_between_words, iterations=5)
-        simple_kernel = np.ones((5, 5), np.uint8)
+            img_array, kernel_to_remove_gaps_between_words, iterations=1)
+        simple_kernel = np.ones((2, 2), np.uint8)
         self.dilated_image = cv2.dilate(
-            self.dilated_image, simple_kernel, iterations=2)
+            self.dilated_image, simple_kernel, iterations=1)
         self.dilated_image = Image.fromarray(self.dilated_image)
 
     def find_contours(self):
@@ -136,15 +143,18 @@ class OcrToTableTool:
                 f.write(",".join(row) + "\n")
 
     def execute(self):
+        self.remove_noise_with_erode()
+        self.store_process_image(
+            './uploads/OcrTool/27_eroded_image.jpg', self.erode_img)
         self.dilate_image()
         self.store_process_image(
-            './uploads/OcrTool/0_dilated_image.jpg', self.dilated_image)
+            './uploads/OcrTool/28_dilated_image.jpg', self.dilated_image)
         self.find_contours()
         self.store_process_image(
-            './uploads/OcrTool/1_contours.jpg', self.image_with_contours_drawn)
+            './uploads/OcrTool/29_contours.jpg', self.image_with_contours_drawn)
         self.convert_contours_to_bounding_boxes()
         self.store_process_image(
-            './uploads/OcrTool/2_bounding_boxes.jpg', self.image_with_all_bounding_boxes)
+            './uploads/OcrTool/30_bounding_boxes.jpg', self.image_with_all_bounding_boxes)
         self.mean_height = self.get_mean_height_of_bounding_boxes()
         self.sort_bounding_boxes_by_y_coordinate()
         self.club_all_bounding_boxes_by_similar_y_coordinates_into_rows()

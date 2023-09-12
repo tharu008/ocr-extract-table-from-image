@@ -86,85 +86,79 @@ class TableLinesRemover:
         # PIL image used for visualization(convert np to PIL)
         self.blended_image = Image.fromarray(blended_array)
 
+    def threshold_blended_image(self):
+        threshold_value = 120  # Adjust the threshold value as needed
+        self.thresholded_blended_image = self.blended_image.point(
+            lambda p: 255 if p > threshold_value else 0)
+
     def dilate_combined_image_to_make_lines_thicker(self):
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-        img_array = np.array(self.blended_image)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        img_array = np.array(self.thresholded_blended_image)
         self.combined_image_dilated = cv2.dilate(
-            img_array, kernel, iterations=10)
+            img_array, kernel, iterations=6)
         self.combined_image_dilated = Image.fromarray(
             self.combined_image_dilated)
 
-    # Threshold blended image - PIL Image
-    def threshold_blended_image(self):
-        threshold_value = 120  # Adjust the threshold value as needed
-        self.thresholded_dilated_image = self.combined_image_dilated.point(
-            lambda p: 255 if p > threshold_value else 0)
+    # def subtract_combined_and_dilated_image_from_original_image(self):
+    #     inverted_array = np.array(self.inverted_image)
+    #     thresholded_dilated_array = np.array(self.thresholded_dilated_image)
+    #     # Perform subtraction between the two NumPy arrays
+    #     subtracted_array = np.subtract(
+    #         inverted_array, thresholded_dilated_array)
+    #     # Convert the result back to a PIL Image
+    #     self.image_without_lines = Image.fromarray(subtracted_array)
 
-    def subtract_combined_and_dilated_image_from_original_image(self):
-        inverted_array = np.array(self.inverted_image)
-        thresholded_dilated_array = np.array(self.thresholded_dilated_image)
-        # Perform subtraction between the two NumPy arrays
-        subtracted_array = np.subtract(
-            inverted_array, thresholded_dilated_array)
-        # Convert the result back to a PIL Image
-        self.image_without_lines = Image.fromarray(subtracted_array)
+    # def remove_noise_with_erode_and_dilate(self):
+    #     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    #     img_array_erode = np.array(self.image_without_lines)
+    #     self.image_without_lines_noise_removed = cv2.erode(
+    #         img_array_erode, kernel, iterations=1)
 
-    def remove_noise_with_erode_and_dilate(self):
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-        img_array_erode = np.array(self.image_without_lines)
-        self.image_without_lines_noise_removed = cv2.erode(
-            img_array_erode, kernel, iterations=1)
-
-        img_array_dilate = np.array(self.image_without_lines_noise_removed)
-        self.image_without_lines_noise_removed = cv2.dilate(
-            img_array_dilate, kernel, iterations=1)
-        self.image_without_lines_noise_removed = Image.fromarray(
-            self.image_without_lines_noise_removed)
-
-    # # Threshold blended image - PIL Image
-    # def threshold_blended_image(self):
-    #     threshold_value = 120  # Adjust the threshold value as needed
-    #     self.thresh_blended_image = self.blended_image.point(
-    #         lambda p: 255 if p > threshold_value else 0)
+    #     img_array_dilate = np.array(self.image_without_lines_noise_removed)
+    #     self.image_without_lines_noise_removed = cv2.dilate(
+    #         img_array_dilate, kernel, iterations=1)
+    #     self.image_without_lines_noise_removed = Image.fromarray(
+    #         self.image_without_lines_noise_removed)
 
     def execute(self):
         self.read_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/0_original.jpg", self.image)
+            "./uploads/TableLineRemover/16_original_img_with_padding.jpg", self.image)
         self.convert_image_to_grayscale()
         self.store_process_image(
-            "./uploads/TableLineRemover/1_grayscaled.jpg", self.grayscale_image)
+            "./uploads/TableLineRemover/17_grayscaled.jpg", self.grayscale_image)
         self.threshold_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/2_thresholded.jpg", self.thresholded_image)
+            "./uploads/TableLineRemover/18_thresholded.jpg", self.thresholded_image)
         self.invert_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/3_inverteded.jpg", self.inverted_image)
+            "./uploads/TableLineRemover/19_inverteded.jpg", self.inverted_image)
         self.v_erosion_image(iterations=12)
         self.store_process_image(
-            "./uploads/TableLineRemover/4_vertical_eroded.jpg", self.v_eroded_image)
-        self.v_dilation_image(iterations=12)
+            "./uploads/TableLineRemover/20_vertical_eroded.jpg", self.v_eroded_image)
+        self.v_dilation_image(iterations=10)
         self.store_process_image(
-            "./uploads/TableLineRemover/5_vertical_dilated.jpg", self.v_dilated_image)
+            "./uploads/TableLineRemover/21_vertical_dilated.jpg", self.v_dilated_image)
         self.h_erosion_image(iterations=12)
         self.store_process_image(
-            "./uploads/TableLineRemover/6_horizontal_eroded.jpg", self.h_eroded_image)
-        self.h_dilation_image(iterations=12)
+            "./uploads/TableLineRemover/22_horizontal_eroded.jpg", self.h_eroded_image)
+        self.h_dilation_image(iterations=10)
         self.store_process_image(
-            "./uploads/TableLineRemover/7_horizontal_dilated.jpg", self.h_dilated_image)
+            "./uploads/TableLineRemover/23_horizontal_dilated.jpg", self.h_dilated_image)
         self.blend_images(1, 1)
         self.store_process_image(
-            "./uploads/TableLineRemover/8_blended.jpg", self.blended_image)
-        self.dilate_combined_image_to_make_lines_thicker()
-        self.store_process_image(
-            "./uploads/TableLineRemover/9_dilated_combined_image.jpg", self.combined_image_dilated)
+            "./uploads/TableLineRemover/24_blended.jpg", self.blended_image)
         self.threshold_blended_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/10_thresholded_dilated_image.jpg", self.thresholded_dilated_image)
-        self.subtract_combined_and_dilated_image_from_original_image()
+            "./uploads/TableLineRemover/25_thresholded_blended_image.jpg", self.thresholded_blended_image)
+        self.dilate_combined_image_to_make_lines_thicker()
         self.store_process_image(
-            "./uploads/TableLineRemover/11_image_without_lines.jpg", self.image_without_lines)
-        self.remove_noise_with_erode_and_dilate()
-        self.store_process_image(
-            "./uploads/TableLineRemover/12_image_without_lines_noise_removed.jpg", self.image_without_lines_noise_removed)
-        return self.image_without_lines_noise_removed
+            "./uploads/TableLineRemover/26_dilated_combined_image.jpg", self.combined_image_dilated)
+        # self.subtract_combined_and_dilated_image_from_original_image()
+        # self.store_process_image(
+        #     "./uploads/TableLineRemover/11_image_without_lines.jpg", self.image_without_lines)
+        # self.remove_noise_with_erode_and_dilate()
+        # self.store_process_image(
+        #     "./uploads/TableLineRemover/12_image_without_lines_noise_removed.jpg", self.image_without_lines_noise_removed)
+        # return self.image_without_lines_noise_removed
+        return self.thresholded_blended_image
