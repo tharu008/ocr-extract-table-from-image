@@ -94,11 +94,18 @@ class TableLinesRemover:
         self.combined_image_dilated = Image.fromarray(
             self.combined_image_dilated)
 
+    # Threshold blended image - PIL Image
+    def threshold_blended_image(self):
+        threshold_value = 120  # Adjust the threshold value as needed
+        self.thresholded_dilated_image = self.combined_image_dilated.point(
+            lambda p: 255 if p > threshold_value else 0)
+
     def subtract_combined_and_dilated_image_from_original_image(self):
         inverted_array = np.array(self.inverted_image)
-        combined_dilated_array = np.array(self.combined_image_dilated)
+        thresholded_dilated_array = np.array(self.thresholded_dilated_image)
         # Perform subtraction between the two NumPy arrays
-        subtracted_array = np.subtract(inverted_array, combined_dilated_array)
+        subtracted_array = np.subtract(
+            inverted_array, thresholded_dilated_array)
         # Convert the result back to a PIL Image
         self.image_without_lines = Image.fromarray(subtracted_array)
 
@@ -151,10 +158,13 @@ class TableLinesRemover:
         self.dilate_combined_image_to_make_lines_thicker()
         self.store_process_image(
             "./uploads/TableLineRemover/9_dilated_combined_image.jpg", self.combined_image_dilated)
+        self.threshold_blended_image()
+        self.store_process_image(
+            "./uploads/TableLineRemover/10_thresholded_dilated_image.jpg", self.thresholded_dilated_image)
         self.subtract_combined_and_dilated_image_from_original_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/10_image_without_lines.jpg", self.image_without_lines)
+            "./uploads/TableLineRemover/11_image_without_lines.jpg", self.image_without_lines)
         self.remove_noise_with_erode_and_dilate()
         self.store_process_image(
-            "./uploads/TableLineRemover/11_image_without_lines_noise_removed.jpg", self.image_without_lines_noise_removed)
+            "./uploads/TableLineRemover/12_image_without_lines_noise_removed.jpg", self.image_without_lines_noise_removed)
         return self.image_without_lines_noise_removed

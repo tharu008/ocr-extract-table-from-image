@@ -13,5 +13,6 @@ perspective_corrected_image = table_extractor.execute()
 table_lines_remover = tlr.TableLinesRemover(perspective_corrected_image)
 image_without_lines_noise_removed = table_lines_remover.execute()
 
-ocr_to_table_tool = ottt.OcrToTableTool(image_without_lines_noise_removed)
+ocr_to_table_tool = ottt.OcrToTableTool(
+    image_without_lines_noise_removed, perspective_corrected_image)
 ocr_to_table_tool.execute()
