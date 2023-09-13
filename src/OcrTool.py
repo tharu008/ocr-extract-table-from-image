@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 import pytesseract
 
 
-class OcrToTableTool:
+class OcrTool:
     def __init__(self, image_with_lines_detected, perspective_corrected_image):
         self.binarized_img = image_with_lines_detected
         self.image = perspective_corrected_image
@@ -121,7 +121,10 @@ class OcrToTableTool:
     def get_result_from_tesseract(self, image_path):
         # Use pytesseract to extract text from the image
         text = pytesseract.image_to_string(
-            self.image, lang='eng', config='--oem 3 --psm 7 --dpi 72 -c tessedit_char_whitelist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789().calmg* "')
+            image_path,
+            lang='eng',
+            config='--oem 3 --psm 7 --dpi 72 -c tessedit_char_whitelist="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789().calmg* "'
+        )
         return text.strip()
 
     # def generate_csv_file(self):
@@ -129,25 +132,25 @@ class OcrToTableTool:
     #         for row in self.table:
     #             f.write(",".join(row) + "\n")
 
-    # def generate_xml_file(self):
-    #     root = ET.Element("nsbm")
-    #     students = ET.SubElement(root, "students")
+    def generate_xml_file(self):
+        root = ET.Element("nsbm")
+        students = ET.SubElement(root, "students")
 
-    #     for i, row in enumerate(self.table):
-    #         student = ET.SubElement(students, "student")
-    #         no = ET.SubElement(student, "no")
-    #         no.text = str(i + 1)
-    #         index = ET.SubElement(student, "index")
-    #         index.text = row[0]
-    #         title = ET.SubElement(student, "title")
-    #         title.text = row[1]
-    #         name = ET.SubElement(student, "name")
-    #         name.text = row[2]
-    #         signature = ET.SubElement(student, "signature")
-    #         signature.text = row[3]
+        for i, row in enumerate(self.table):
+            student = ET.SubElement(students, "student")
+            no = ET.SubElement(student, "no")
+            no.text = row[0]
+            index = ET.SubElement(student, "index")
+            index.text = row[1]
+            title = ET.SubElement(student, "title")
+            title.text = row[2]
+            name = ET.SubElement(student, "name")
+            name.text = row[3]
+            # signature = ET.SubElement(student, "signature")
+            # signature.text = row[4]
 
-    #     tree = ET.ElementTree(root)
-    #     tree.write("info.xml")
+        tree = ET.ElementTree(root)
+        tree.write("info.xml")
 
     def execute(self):
         # self.remove_noise_with_erode()
@@ -168,4 +171,4 @@ class OcrToTableTool:
         self.sort_all_rows_by_x_coordinate()
         self.crop_each_bounding_box_and_ocr()
         # self.generate_csv_file()
-        # self.generate_xml_file()
+        self.generate_xml_file()
