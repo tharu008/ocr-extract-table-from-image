@@ -1,7 +1,6 @@
 from PIL import Image, ImageOps
 from skimage.morphology import rectangle, binary_erosion, binary_dilation
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 
 
@@ -98,57 +97,6 @@ class TableExtractor:
         threshold_value = 120  # Adjust the threshold value as needed
         self.thresh_blended_image = self.blended_image.point(
             lambda p: 255 if p > threshold_value else 0)
-
-    # cv2 - optional
-    '''
-    def img_sample(self):
-        rho = 1
-        theta = np.pi/80
-        threshold = 200
-        minLinLength = 300
-        maxLineGap = 20
-        binary_image = np.array(self.thresh_blended_image)
-        linesP = cv2.HoughLinesP(
-            binary_image, rho, theta, threshold, None, minLinLength, maxLineGap)
-
-        imgS = self.image.copy()
-        cImage = np.array(imgS)
-
-        def is_vertical(line):
-            return line[0] == line[2]
-
-        def is_horizontal(line):
-            return line[1] == line[3]
-        horizontal_lines = []
-        vertical_lines = []
-
-        if linesP is not None:
-            for i in range(0, len(linesP)):
-                l = linesP[i][0]
-                if (is_vertical(l)):
-                    vertical_lines.append(l)
-
-                elif (is_horizontal(l)):
-                    horizontal_lines.append(l)
-        for i, line in enumerate(horizontal_lines):
-            cv2.line(cImage, (line[0], line[1]), (line[2],
-                     line[3]), (0, 255, 0), 3, cv2.LINE_AA)
-
-        for i, line in enumerate(vertical_lines):
-            cv2.line(cImage, (line[0], line[1]), (line[2],
-                     line[3]), (0, 0, 255), 3, cv2.LINE_AA)
-
-        width = 800  # Specify the desired width
-        height = 600  # Specify the desired height
-        resized_image = cv2.resize(cImage, (width, height))
-
-        # Display the resized image with the specified aspect ratio
-        cv2.imshow("with_line", resized_image)
-
-        cv2.waitKey(0)
-        cv2.destroyWindow("with_line")  # close the window
-
-    '''
 
     # Find contours - cv2
     def find_contours(self):
