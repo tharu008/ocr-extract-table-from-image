@@ -1,40 +1,29 @@
 import cv2
 import numpy as np
 from PIL import Image, ImageOps
-import subprocess
+# import subprocess.output
+import xml.etree.ElementTree as ET
+import pytesseract
 
 
 class OcrToTableTool:
-    def __init__(self, image, original_image):
-        self.thresholded_image = image
-        self.original_image = original_image
+    def __init__(self, image_with_lines_detected, perspective_corrected_image):
+        self.binarized_img = image_with_lines_detected
+        self.image = perspective_corrected_image
 
     # Store processed image - PIL Image
     def store_process_image(self, output_path, image):
         image.save(output_path)
 
-    def threshold_image(self):
-        return cv2.threshold(self.grey_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
-    def convert_image_to_grayscale(self):
-        return cv2.cvtColor(self.image, self.dilated_image)
-
-    def remove_noise_with_erode(self):
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
-        img_array = np.array(self.thresholded_image)
-        self.erode_img = cv2.erode(
-            img_array, kernel, iterations=1)
-        self.erode_img = Image.fromarray(self.erode_img)
-
     def dilate_image(self):
         kernel_to_remove_gaps_between_words = np.array([
-            [1, 1, 1, 1, 1],
-            [1, 1, 1, 1, 1]
+            [1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1]
         ])
-        img_array = np.array(self.erode_img)
+        img_array = np.array(self.binarized_img)
         self.dilated_image = cv2.dilate(
             img_array, kernel_to_remove_gaps_between_words, iterations=1)
-        simple_kernel = np.ones((2, 2), np.uint8)
+        simple_kernel = np.ones((3, 3), np.uint8)
         self.dilated_image = cv2.dilate(
             self.dilated_image, simple_kernel, iterations=1)
         self.dilated_image = Image.fromarray(self.dilated_image)
@@ -46,7 +35,7 @@ class OcrToTableTool:
             dilated_image_array, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         self.contours = result[0]
         # Convert the original image to a numpy array
-        original_image_array = np.array(self.original_image)
+        original_image_array = np.array(self.image)
         # Create a copy of the original image to draw contours on
         self.image_with_contours_drawn = original_image_array.copy()
         cv2.drawContours(self.image_with_contours_drawn,
@@ -67,7 +56,7 @@ class OcrToTableTool:
 
     def convert_contours_to_bounding_boxes(self):
         self.bounding_boxes = []
-        self.image_with_all_bounding_boxes = self.original_image.copy()
+        self.image_with_all_bounding_boxes = self.image.copy()
         for contour in self.contours:
             x, y, w, h = cv2.boundingRect(contour)
             self.bounding_boxes.append((x, y, w, h))
@@ -112,7 +101,7 @@ class OcrToTableTool:
         current_row = []
         image_number = 0
         original_image_array = np.array(
-            self.original_image)  # Convert to numpy array
+            self.image)  # Convert to numpy array
 
         for row in self.rows:
             for bounding_box in row:
@@ -130,22 +119,40 @@ class OcrToTableTool:
             current_row = []
 
     def get_result_from_tesseract(self, image_path):
-        tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR"  # Replace with the actual path
+        # Use pytesseract to extract text from the image
+        text = pytesseract.image_to_string(
+            self.image, lang='eng', config='--oem 3 --psm 7 --dpi 72 -c tessedit_char_whitelist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789().calmg* "')
+        return text.strip()
 
-        output = subprocess.getoutput(
-            f'{tesseract_cmd} {image_path} - -l eng --oem 3 --psm 7 --dpi 72 -c tessedit_char_whitelist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789().calmg* "')
-        output = output.strip()
-        return output
+    # def generate_csv_file(self):
+    #     with open("output.csv", "w") as f:
+    #         for row in self.table:
+    #             f.write(",".join(row) + "\n")
 
-    def generate_csv_file(self):
-        with open("output.csv", "w") as f:
-            for row in self.table:
-                f.write(",".join(row) + "\n")
+    # def generate_xml_file(self):
+    #     root = ET.Element("nsbm")
+    #     students = ET.SubElement(root, "students")
+
+    #     for i, row in enumerate(self.table):
+    #         student = ET.SubElement(students, "student")
+    #         no = ET.SubElement(student, "no")
+    #         no.text = str(i + 1)
+    #         index = ET.SubElement(student, "index")
+    #         index.text = row[0]
+    #         title = ET.SubElement(student, "title")
+    #         title.text = row[1]
+    #         name = ET.SubElement(student, "name")
+    #         name.text = row[2]
+    #         signature = ET.SubElement(student, "signature")
+    #         signature.text = row[3]
+
+    #     tree = ET.ElementTree(root)
+    #     tree.write("info.xml")
 
     def execute(self):
-        self.remove_noise_with_erode()
-        self.store_process_image(
-            './uploads/OcrTool/27_eroded_image.jpg', self.erode_img)
+        # self.remove_noise_with_erode()
+        # self.store_process_image(
+        #     './uploads/OcrTool/27_eroded_image.jpg', self.erode_img)
         self.dilate_image()
         self.store_process_image(
             './uploads/OcrTool/28_dilated_image.jpg', self.dilated_image)
@@ -160,4 +167,5 @@ class OcrToTableTool:
         self.club_all_bounding_boxes_by_similar_y_coordinates_into_rows()
         self.sort_all_rows_by_x_coordinate()
         self.crop_each_bounding_box_and_ocr()
-        self.generate_csv_file()
+        # self.generate_csv_file()
+        # self.generate_xml_file()

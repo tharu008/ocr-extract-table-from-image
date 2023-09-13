@@ -4,7 +4,7 @@ from skimage.morphology import rectangle, binary_erosion, binary_dilation
 import numpy as np
 
 
-class TableLinesRemover:
+class TableLinesDetector:
     def __init__(self, image):
         self.image = image
 
@@ -123,37 +123,37 @@ class TableLinesRemover:
     def execute(self):
         self.read_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/16_original_img_with_padding.jpg", self.image)
+            "./uploads/TableLinesDetector/16_original_img_with_padding.jpg", self.image)
         self.convert_image_to_grayscale()
         self.store_process_image(
-            "./uploads/TableLineRemover/17_grayscaled.jpg", self.grayscale_image)
+            "./uploads/TableLinesDetector/17_grayscaled.jpg", self.grayscale_image)
         self.threshold_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/18_thresholded.jpg", self.thresholded_image)
+            "./uploads/TableLinesDetector/18_thresholded.jpg", self.thresholded_image)
         self.invert_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/19_inverteded.jpg", self.inverted_image)
+            "./uploads/TableLinesDetector/19_inverteded.jpg", self.inverted_image)
         self.v_erosion_image(iterations=12)
         self.store_process_image(
-            "./uploads/TableLineRemover/20_vertical_eroded.jpg", self.v_eroded_image)
+            "./uploads/TableLinesDetector/20_vertical_eroded.jpg", self.v_eroded_image)
         self.v_dilation_image(iterations=10)
         self.store_process_image(
-            "./uploads/TableLineRemover/21_vertical_dilated.jpg", self.v_dilated_image)
+            "./uploads/TableLinesDetector/21_vertical_dilated.jpg", self.v_dilated_image)
         self.h_erosion_image(iterations=12)
         self.store_process_image(
-            "./uploads/TableLineRemover/22_horizontal_eroded.jpg", self.h_eroded_image)
+            "./uploads/TableLinesDetector/22_horizontal_eroded.jpg", self.h_eroded_image)
         self.h_dilation_image(iterations=10)
         self.store_process_image(
-            "./uploads/TableLineRemover/23_horizontal_dilated.jpg", self.h_dilated_image)
+            "./uploads/TableLinesDetector/23_horizontal_dilated.jpg", self.h_dilated_image)
         self.blend_images(1, 1)
         self.store_process_image(
-            "./uploads/TableLineRemover/24_blended.jpg", self.blended_image)
+            "./uploads/TableLinesDetector/24_blended.jpg", self.blended_image)
         self.threshold_blended_image()
         self.store_process_image(
-            "./uploads/TableLineRemover/25_thresholded_blended_image.jpg", self.thresholded_blended_image)
+            "./uploads/TableLinesDetector/25_thresholded_blended_image.jpg", self.thresholded_blended_image)
         self.dilate_combined_image_to_make_lines_thicker()
         self.store_process_image(
-            "./uploads/TableLineRemover/26_dilated_combined_image.jpg", self.combined_image_dilated)
+            "./uploads/TableLinesDetector/26_dilated_combined_image.jpg", self.combined_image_dilated)
         # self.subtract_combined_and_dilated_image_from_original_image()
         # self.store_process_image(
         #     "./uploads/TableLineRemover/11_image_without_lines.jpg", self.image_without_lines)
