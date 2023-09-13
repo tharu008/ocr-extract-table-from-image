@@ -135,9 +135,10 @@ class OcrTool:
     def generate_xml_file(self):
         root = ET.Element("nsbm")
         students = ET.SubElement(root, "students")
+        batches = ET.SubElement(students, "batches")
 
         for i, row in enumerate(self.table):
-            student = ET.SubElement(students, "student")
+            student = ET.SubElement(batches, "student")
             no = ET.SubElement(student, "no")
             no.text = row[0]
             index = ET.SubElement(student, "index")
