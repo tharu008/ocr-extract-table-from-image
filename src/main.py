@@ -16,3 +16,4 @@ image_with_lines_detected = table_lines_remover.execute()
 ocr_to_table_tool = ot.OcrTool(
     image_with_lines_detected, perspective_corrected_image)
 ocr_to_table_tool.execute()
+
