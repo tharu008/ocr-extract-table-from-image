@@ -2,46 +2,34 @@
     <students>
         <batches>
             <student>
-                <no>i aa . E</no>
-                <index>No</index>
-                <title>Student No</title>
-                <name>Title</name>
-            </student>
-            <student>
-                <no>1</no>
                 <index>10000409</index>
-                <title>Ms</title>
-                <name>MS Dilshanika Perera</name>
+                <name>M S Dilshanika Perera</name>
+                <attendance>Present</attendance>
             </student>
             <student>
-                <no>2</no>
                 <index>10009301</index>
-                <title>Mr</title>
-                <name>CWM AShehan Abeyrathne 2</name>
+                <name>CWM AShehan Abeyrathne</name>
+                <attendance>Present</attendance>
             </student>
             <student>
-                <no>3</no>
                 <index>10009302</index>
-                <title>Mr</title>
                 <name>BAKM Chithrananda</name>
+                <attendance>Present</attendance>
             </student>
             <student>
-                <no>4</no>
                 <index>10009303</index>
-                <title>Ms</title>
-                <name>W Shashini Minosha De Silva</name>
+                <name>W Shashini Minosha De Silva oe</name>
+                <attendance>Present</attendance>
             </student>
             <student>
-                <no>5</no>
                 <index>10009304</index>
-                <title>Mr</title>
                 <name>K L Udara Maduranga Liyanage</name>
+                <attendance>Present</attendance>
             </student>
             <student>
-                <no>6</no>
                 <index>10009306</index>
-                <title>Mr</title>
                 <name>Hansa Anuradha Wickramanayake</name>
+                <attendance>Present</attendance>
             </student>
         </batches>
     </students>

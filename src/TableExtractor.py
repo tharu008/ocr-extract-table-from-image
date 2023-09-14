@@ -1,6 +1,8 @@
 from PIL import Image, ImageOps
 from skimage.morphology import rectangle, binary_erosion, binary_dilation
 import numpy as np
+import gaussian_filter as gf
+import gaussian_thresholding as gt
 import cv2
 
 
@@ -22,12 +24,16 @@ class TableExtractor:
     def convert_image_to_grayscale(self):
         self.grayscale_image = ImageOps.grayscale(self.image)
 
+    def denoise_image(self):
+        kernal = gf.gaussian_kernel(5, 1)
+        self.denoised_image = gf.gaussian_filter(self.grayscale_image, kernal)
+
     # Threshold image - PIL Image
     def threshold_image(self):
-        threshold_value = 150  # Adjust the threshold value as needed
-        self.thresholded_image = self.grayscale_image.point(
-            lambda p: 255 if p > threshold_value else 0)
-
+        self.thresholded_image = Image.fromarray(gt.apply_adaptive_threshold_gaussian(self.denoised_image, 27, 10, 5))
+        # threshold_value = 150  # Adjust the threshold value as needed
+        # self.thresholded_image = self.grayscale_image.point(
+        #     lambda p: 255 if p > threshold_value else 0)
     # Invert image - PIL Image
     def invert_image(self):
         self.inverted_image = ImageOps.invert(self.thresholded_image)
@@ -212,7 +218,7 @@ class TableExtractor:
         padding = int(image_height * 0.1)
         # Create a white background image with the desired dimensions
         padded_image = Image.new(
-            'RGB', (image_width + 2 * padding, image_height + 2 * padding), (255, 255, 255))
+            'RGB', (image_width + 2 * padding, image_height + 2 * padding), (0, 0, 0))
         # Paste the perspective corrected image onto the white background with padding
         padded_image.paste(self.perspective_corrected_image,
                            (padding, padding))
@@ -225,6 +231,7 @@ class TableExtractor:
         self.convert_image_to_grayscale()
         self.store_process_image(
             "./uploads/TableExtractor/1_grayscaled.jpg", self.grayscale_image)
+        self.denoise_image()
         self.threshold_image()
         self.store_process_image(
             "./uploads/TableExtractor/2_thresholded.jpg", self.thresholded_image)

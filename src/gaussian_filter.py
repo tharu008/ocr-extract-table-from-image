@@ -1,5 +1,4 @@
 import numpy as np
-import cv2
 
 
 def gaussian_kernel(size, sigma=1):
@@ -28,13 +27,3 @@ def gaussian_filter(image, kernel):
             image_pad[i, j] = np.sum(roi * kernel)
 
     return image_pad[size:-size, size:-size]
-
-
-image = cv2.imread("1.jpeg")
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-kernel = gaussian_kernel(5)
-
-filtered_image = gaussian_filter(gray, kernel)
-
-cv2.imwrite("out.jpg", filtered_image)

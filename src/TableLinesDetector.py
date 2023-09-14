@@ -2,6 +2,8 @@ import cv2
 from PIL import Image, ImageOps
 from skimage.morphology import rectangle, binary_erosion, binary_dilation
 import numpy as np
+import gaussian_filter as gf
+import gaussian_thresholding as gt
 
 
 class TableLinesDetector:
@@ -19,12 +21,17 @@ class TableLinesDetector:
     # Convert image to grayscale - PIL Image
     def convert_image_to_grayscale(self):
         self.grayscale_image = ImageOps.grayscale(self.image)
+    
+    def denoise_image(self):
+        kernal = gf.gaussian_kernel(5, 2)
+        self.denoised_image = gf.gaussian_filter(self.grayscale_image, kernal)
 
     # Threshold image - PIL Image
     def threshold_image(self):
-        threshold_value = 150  # Adjust the threshold value as needed
-        self.thresholded_image = self.grayscale_image.point(
-            lambda p: 255 if p > threshold_value else 0)
+        self.thresholded_image = Image.fromarray(gt.apply_adaptive_threshold_gaussian(self.denoised_image, 27, 10, 5))
+        # threshold_value = 150  # Adjust the threshold value as needed
+        # self.thresholded_image = self.grayscale_image.point(
+        #     lambda p: 255 if p > threshold_value else 0)
 
     # Invert image - PIL Image
     def invert_image(self):
@@ -34,17 +41,19 @@ class TableLinesDetector:
     # erosion vertical lines
     def v_erosion_image(self, iterations):
         image_array = np.array(self.inverted_image)
-        vertical_kernel = rectangle(6, 1)
+        vertical_kernel = rectangle(10, 1)
         eroded_image_array = image_array.copy()  # Make a copy to preserve original
         for _ in range(iterations):
             eroded_image_array = binary_erosion(
                 eroded_image_array, vertical_kernel)
+        eroded_image_array = binary_erosion(
+            eroded_image_array, rectangle(6, 6))
         self.v_eroded_image = Image.fromarray(eroded_image_array)
 
     # dilation vertical lines - skimage
     def v_dilation_image(self, iterations):
         image_array = np.array(self.v_eroded_image)
-        vertical_kernel = rectangle(6, 1)
+        vertical_kernel = rectangle(25, 1)
         dilated_image_array = image_array.copy()  # Make a copy to preserve original
         for _ in range(iterations):
             dilated_image_array = binary_dilation(
@@ -55,17 +64,19 @@ class TableLinesDetector:
     # erosion horizontal lines - skimage
     def h_erosion_image(self, iterations):
         image_array = np.array(self.inverted_image)
-        horizontal_kernel = rectangle(1, 6)
+        horizontal_kernel = rectangle(1, 10)
         eroded_image_array = image_array.copy()  # Make a copy to preserve original
         for _ in range(iterations):
             eroded_image_array = binary_erosion(
                 eroded_image_array, horizontal_kernel)
+        eroded_image_array = binary_erosion(
+                eroded_image_array, rectangle(6, 6))
         self.h_eroded_image = Image.fromarray(eroded_image_array)
 
     # dilation horizontal lines - skimage
     def h_dilation_image(self, iterations):
         image_array = np.array(self.h_eroded_image)
-        horizontal_kernel = rectangle(1, 6)
+        horizontal_kernel = rectangle(1, 17)
         dilated_image_array = image_array.copy()  # Make a copy to preserve original
         for _ in range(iterations):
             dilated_image_array = binary_dilation(
@@ -127,6 +138,7 @@ class TableLinesDetector:
         self.convert_image_to_grayscale()
         self.store_process_image(
             "./uploads/TableLinesDetector/17_grayscaled.jpg", self.grayscale_image)
+        self.denoise_image()
         self.threshold_image()
         self.store_process_image(
             "./uploads/TableLinesDetector/18_thresholded.jpg", self.thresholded_image)

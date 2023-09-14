@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import pymongo as mongo
+import sys
 
 myclient = mongo.MongoClient("mongodb://localhost:27017/")
 
@@ -94,8 +95,7 @@ def plot_attendance(student_id):
 
 
 if __name__ == "__main__":
-    import sys
-
+  
     if len(sys.argv) != 2:
         print("Usage: python infovis.py <student_id>")
     else:

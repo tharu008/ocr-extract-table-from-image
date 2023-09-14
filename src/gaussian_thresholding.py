@@ -1,6 +1,5 @@
 import numpy as np
 import gaussian_filter as gf
-import cv2
 
 
 def apply_adaptive_threshold_gaussian(image, block_size, sigma, c):
@@ -17,10 +16,3 @@ def apply_adaptive_threshold_gaussian(image, block_size, sigma, c):
     binary[image > local_threshold] = 255
 
     return binary
-
-
-image = cv2.imread("0.jpg")
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-filtered = gf.gaussian_filter(gray, gf.gaussian_kernel(3, 1))
-thresholded_image = apply_adaptive_threshold_gaussian(filtered, 27, 10, 5)
-cv2.imwrite("output.jpg", thresholded_image)
